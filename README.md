@@ -273,7 +273,7 @@ Confirm Nginx is serving files from the correct directory and that `data/EZORTD.
 
 ## Future Work
 
-- Integrate remaining sensors: BH1750 (light), BMP581 (pressure), ZMOD4410 (TVOC/IAQ)
+- Integrate remaining sensors: EZO-pH, EZO-DO, EZO-EC circuit
 - Add historical data visualization using the CSV log
 - Implement WebSocket-based push updates to replace polling
 - Package the daemon as a proper `systemd` service with logging
