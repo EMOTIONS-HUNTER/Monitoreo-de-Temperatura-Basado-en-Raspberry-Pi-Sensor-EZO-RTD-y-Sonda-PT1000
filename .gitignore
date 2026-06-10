@@ -1,0 +1,21 @@
+# Carpetas de compilación y entorno
+.pio/
+.vs/
+.vscode/
+build/
+bin/
+obj/
+
+# Archivos de configuración locales
+*.code-workspace
+.DS_Store
+
+# Archivos binarios y de salida
+*.hex
+*.bin
+*.elf
+*.map
+
+# Archivos de depuración y logs
+*.log
+*.tmp

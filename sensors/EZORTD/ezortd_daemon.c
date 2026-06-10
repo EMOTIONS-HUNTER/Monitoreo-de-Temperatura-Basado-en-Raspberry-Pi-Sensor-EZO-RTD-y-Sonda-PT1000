@@ -29,15 +29,6 @@ int main()
 
             if (f)
             {
-                time_t now = time(NULL);
-                struct tm *t = localtime(&now);
-
-                char timestamp[32];
-
-                strftime(timestamp,
-                         sizeof(timestamp),
-                         "%Y-%m-%d %H:%M:%S",
-                         t);
                 fprintf(f,
                         "{ \"temperature\": %.3f }\n",
                         temperature);
@@ -53,14 +44,6 @@ int main()
         if (log)
         {
             time_t now = time(NULL);
-            struct tm *t = localtime(&now);
-
-            char timestamp[32];
-
-            strftime(timestamp,
-                     sizeof(timestamp),
-                     "%Y-%m-%d %H:%M:%S",
-                     t);
 
             fprintf(log,
                     "%ld,%.3f\n",
