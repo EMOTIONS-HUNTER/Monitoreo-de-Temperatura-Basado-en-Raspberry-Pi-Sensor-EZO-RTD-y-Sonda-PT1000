@@ -1,0 +1,16 @@
+{
+  "name": "monitoreo-de-temperatura-basado-en-raspberry-pi-sensor-ezo-rtd-y-sonda-pt1000",
+  "version": "1.0.0",
+  "description": "This project implements a real-time temperature monitoring system based on the **Atlas Scientific EZO-RTD™** sensor module, interfaced via I²C to a Raspberry Pi. It extends a previous air quality monitoring platform (originally built around the HTU21D sensor) by replacing the temperature/humidity measurement stage with a high-precision RTD (Resistance Temperature Detector) circuit that provides temperature-only readings with significantly improved accuracy.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
+  }
+}

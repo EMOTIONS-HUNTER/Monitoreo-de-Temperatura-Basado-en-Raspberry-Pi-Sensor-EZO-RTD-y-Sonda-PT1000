@@ -3,10 +3,18 @@ const HISTORY_POLLING_INTERVAL_MS = 10000;
 const ALARM_CONFIG_FILE = "../config/alarms.json";
 const WARNING_MARGIN_RATIO = 0.1;
 
+// Diccionario para traducir estados en la UI sin romper las clases CSS
+const stateTranslations = {
+    "NORMAL": "NORMAL",
+    "OFFLINE": "DESCONECTADO",
+    "WARNING": "ADVERTENCIA",
+    "CRITICAL": "CRÍTICO"
+};
+
 const sensors = [
     {
         id: "temperature",
-        name: "Temperature",
+        name: "Temperatura",
         file: "../data/EZORTD.json",
         key: "temperature",
         decimals: 3,
@@ -26,7 +34,7 @@ const sensors = [
     },
     {
         id: "do",
-        name: "Dissolved Oxygen",
+        name: "Oxígeno Disuelto",
         file: "../data/EZODO.json",
         key: "do",
         decimals: 2,
@@ -36,7 +44,7 @@ const sensors = [
     },
     {
         id: "ec",
-        name: "Conductivity",
+        name: "Conductividad",
         file: "../data/EZOEC.json",
         key: "ec",
         decimals: 0,
@@ -49,7 +57,7 @@ const sensors = [
 const historicalCharts = [
     {
         id: "temperature",
-        title: "Temperature vs Time",
+        title: "Temperatura vs Tiempo",
         file: "../logs/temperature.csv",
         valueKey: "temperature",
         unit: "degC",
@@ -59,7 +67,7 @@ const historicalCharts = [
     },
     {
         id: "ph-history",
-        title: "pH vs Time",
+        title: "pH vs Tiempo",
         file: "../logs/ph.csv",
         valueKey: "ph",
         unit: "pH",
@@ -69,7 +77,7 @@ const historicalCharts = [
     },
     {
         id: "do-history",
-        title: "Dissolved Oxygen vs Time",
+        title: "Oxígeno Disuelto vs Tiempo",
         file: "../logs/do.csv",
         valueKey: "do",
         unit: "mg/L",
@@ -79,7 +87,7 @@ const historicalCharts = [
     },
     {
         id: "ec-history",
-        title: "Conductivity vs Time",
+        title: "Conductividad vs Tiempo",
         file: "../logs/ec.csv",
         valueKey: "ec",
         unit: "uS/cm",
@@ -121,7 +129,7 @@ async function readSensor(sensor) {
             ...sensor,
             online: false,
             numericValue: null,
-            value: "OFFLINE"
+            value: "DESCONECTADO"
         };
     }
 }
@@ -134,7 +142,9 @@ function setSensorState(result) {
     const stateClass = state.toLowerCase();
 
     valueElement.textContent = result.value;
-    stateElement.textContent = state;
+    // Traducir el estado para mostrar en pantalla, manteniendo la clase en inglés
+    stateElement.textContent = stateTranslations[state] || state;
+    
     ["online", "normal", "warning", "critical", "offline"].forEach((className) => {
         stateElement.classList.toggle(className, className === stateClass);
         cardElement.classList.toggle(className, className === stateClass);
@@ -164,26 +174,27 @@ function renderSystemStatus(results) {
     overallDot.classList.toggle("offline", !anyOnline);
 
     if (criticalSensors > 0) {
-        overallStatus.textContent = "CRITICAL ALARM";
+        overallStatus.textContent = "ALARMA CRÍTICA";
     } else if (warningSensors > 0) {
-        overallStatus.textContent = "WARNING ACTIVE";
+        overallStatus.textContent = "ADVERTENCIA ACTIVA";
     } else if (allNormal) {
-        overallStatus.textContent = "ALL SYSTEMS NORMAL";
+        overallStatus.textContent = "TODOS LOS SISTEMAS NORMALES";
     } else if (anyOnline) {
-        overallStatus.textContent = "PARTIAL DATA";
+        overallStatus.textContent = "DATOS PARCIALES";
     } else {
-        overallStatus.textContent = "SYSTEM OFFLINE";
+        overallStatus.textContent = "SISTEMA DESCONECTADO";
     }
 
     healthList.innerHTML = results
         .map((result) => {
             const statusText = result.alarmState || (result.online ? "NORMAL" : "OFFLINE");
             const statusClass = statusText.toLowerCase();
+            const translatedStatus = stateTranslations[statusText] || statusText;
 
             return `
                 <li>
                     <span>${result.name}</span>
-                    <span class="${statusClass}">${statusText}</span>
+                    <span class="${statusClass}">${translatedStatus}</span>
                 </li>
             `;
         })
@@ -235,7 +246,7 @@ function evaluateSensorAlarm(sensorResult, thresholds) {
         return {
             ...sensorResult,
             alarmState: "OFFLINE",
-            alarmMessage: "Sensor data unavailable"
+            alarmMessage: "Datos del sensor no disponibles"
         };
     }
 
@@ -245,7 +256,7 @@ function evaluateSensorAlarm(sensorResult, thresholds) {
         return {
             ...sensorResult,
             alarmState: "WARNING",
-            alarmMessage: "Alarm limits unavailable"
+            alarmMessage: "Límites de alarma no disponibles"
         };
     }
 
@@ -268,7 +279,7 @@ function evaluateSensorAlarm(sensorResult, thresholds) {
     return {
         ...sensorResult,
         alarmState: "NORMAL",
-        alarmMessage: "Within configured range"
+        alarmMessage: "Dentro del rango configurado"
     };
 }
 
@@ -288,14 +299,14 @@ function isNearThreshold(value, limits) {
 }
 
 function buildAlarmMessage(sensorResult, limits, alarmType) {
-    const direction = sensorResult.numericValue < limits.min ? "below" : "above";
+    const direction = sensorResult.numericValue < limits.min ? "por debajo del" : "por encima del";
     const range = `${limits.min} - ${limits.max}`;
 
     if (alarmType === "outside") {
-        return `${sensorResult.value} is ${direction} configured range (${range})`;
+        return `${sensorResult.value} está ${direction} rango configurado (${range})`;
     }
 
-    return `${sensorResult.value} is near configured range (${range})`;
+    return `${sensorResult.value} está cerca del rango configurado (${range})`;
 }
 
 function getAlarmEvents(results) {
@@ -340,26 +351,28 @@ function renderAlarmSummary(results, alarmConfig) {
     document.getElementById("warning-count").textContent = String(warningCount);
     document.getElementById("alarm-offline-count").textContent = String(offlineCount);
     document.getElementById("alarm-config-status").textContent =
-        alarmConfig.loaded ? "loaded" : "unavailable";
+        alarmConfig.loaded ? "cargados" : "no disponibles";
 
-    riskElement.textContent = overallRisk;
+    riskElement.textContent = stateTranslations[overallRisk] || overallRisk;
     ["risk-normal", "risk-warning", "risk-critical", "risk-offline"].forEach((className) => {
         riskElement.classList.remove(className);
     });
     riskElement.classList.add(`risk-${overallRisk.toLowerCase()}`);
 
     if (alarmEvents.length === 0) {
-        alarmList.innerHTML = '<li class="alarm-empty">No active alarms</li>';
+        alarmList.innerHTML = '<li class="alarm-empty">Sin alarmas activas</li>';
         return;
     }
 
     alarmList.innerHTML = alarmEvents
-        .map((event) => `
+        .map((event) => {
+            const translatedSeverity = stateTranslations[event.severity] || event.severity;
+            return `
             <li class="${event.severity.toLowerCase()}">
                 <span>${event.sensorName}</span>
-                <span>${event.severity}: ${event.message}</span>
+                <span>${translatedSeverity}: ${event.message}</span>
             </li>
-        `)
+        `})
         .join("");
 }
 
@@ -376,7 +389,7 @@ async function readHistoricalData(chartConfig) {
         const csvText = await response.text();
         return parseHistoricalCsv(csvText, chartConfig.valueKey);
     } catch (error) {
-        console.warn(`${chartConfig.title} unavailable:`, error);
+        console.warn(`${chartConfig.title} offline:`, error);
         return [];
     }
 }
@@ -598,13 +611,13 @@ document.querySelectorAll(".chart-filter").forEach((button) => {
 
         if (selected === "all") {
             Object.values(chartCards).forEach((card) => {
-                card.style.display = "";
+                if(card) card.style.display = "";
             });
             return;
         }
 
         Object.entries(chartCards).forEach(([key, card]) => {
-            card.style.display = key === selected ? "" : "none";
+            if(card) card.style.display = key === selected ? "" : "none";
         });
     });
 });

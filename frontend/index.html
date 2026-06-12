@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Photobioreactor Dashboard</title>
+    <title>Panel del Fotobiorreactor</title>
     <link rel="stylesheet" href="dashboard.css">
 </head>
 
@@ -12,86 +12,86 @@
     <main class="dashboard-shell">
         <header class="dashboard-header">
             <div>
-                <p class="eyebrow">Atlas Scientific Monitoring</p>
-                <h1>Photobioreactor Dashboard</h1>
+                <p class="eyebrow">Monitoreo Atlas Scientific</p>
+                <h1>Panel del Fotobiorreactor</h1>
             </div>
             <div class="header-status" aria-live="polite">
                 <span class="pulse-dot" id="overall-dot"></span>
-                <span id="overall-status">INITIALIZING</span>
+                <span id="overall-status">INICIALIZANDO</span>
             </div>
         </header>
 
-        <section class="metrics-grid" aria-label="Live sensor readings">
+        <section class="metrics-grid" aria-label="Lecturas en vivo de sensores">
             <article class="metric-card" id="card-temperature">
                 <div class="metric-topline">
-                    <span class="metric-label">Temperature</span>
-                    <span class="metric-state" id="temperature-state">WAITING</span>
+                    <span class="metric-label">Temperatura</span>
+                    <span class="metric-state" id="temperature-state">ESPERANDO</span>
                 </div>
                 <div class="metric-reading">
                     <span id="temperature-value">--</span>
                     <span class="metric-unit">&deg;C</span>
                 </div>
-                <p class="metric-source">EZO-RTD &middot; data/EZORTD.json</p>
+                <p class="metric-source">EZO-RTD &middot; API Local</p>
             </article>
 
             <article class="metric-card" id="card-ph">
                 <div class="metric-topline">
                     <span class="metric-label">pH</span>
-                    <span class="metric-state" id="ph-state">WAITING</span>
+                    <span class="metric-state" id="ph-state">ESPERANDO</span>
                 </div>
                 <div class="metric-reading">
                     <span id="ph-value">--</span>
                     <span class="metric-unit">pH</span>
                 </div>
-                <p class="metric-source">EZO-pH &middot; data/EZOPH.json</p>
+                <p class="metric-source">EZO-pH &middot; API Local</p>
             </article>
 
             <article class="metric-card" id="card-do">
                 <div class="metric-topline">
-                    <span class="metric-label">Dissolved Oxygen</span>
-                    <span class="metric-state" id="do-state">WAITING</span>
+                    <span class="metric-label">Oxígeno Disuelto</span>
+                    <span class="metric-state" id="do-state">ESPERANDO</span>
                 </div>
                 <div class="metric-reading">
                     <span id="do-value">--</span>
                     <span class="metric-unit">mg/L</span>
                 </div>
-                <p class="metric-source">EZO-DO &middot; data/EZODO.json</p>
+                <p class="metric-source">EZO-DO &middot; API Local</p>
             </article>
 
             <article class="metric-card" id="card-ec">
                 <div class="metric-topline">
-                    <span class="metric-label">Conductivity</span>
-                    <span class="metric-state" id="ec-state">WAITING</span>
+                    <span class="metric-label">Conductividad</span>
+                    <span class="metric-state" id="ec-state">ESPERANDO</span>
                 </div>
                 <div class="metric-reading">
                     <span id="ec-value">--</span>
                     <span class="metric-unit">&micro;S/cm</span>
                 </div>
-                <p class="metric-source">EZO-EC &middot; data/EZOEC.json</p>
+                <p class="metric-source">EZO-EC &middot; API Local</p>
             </article>
         </section>
 
-        <section class="system-panel" aria-label="System status">
+        <section class="system-panel" aria-label="Estado del sistema">
             <div class="panel-heading">
-                <h2>System Status</h2>
-                <p>Last update: <span id="last-update">--</span></p>
+                <h2>Estado del Sistema</h2>
+                <p>Última actualización: <span id="last-update">--</span></p>
             </div>
 
             <div class="status-grid">
                 <div class="status-item">
-                    <span class="status-label">Polling interval</span>
-                    <strong>1 second</strong>
+                    <span class="status-label">Intervalo de muestreo</span>
+                    <strong>1 segundo</strong>
                 </div>
                 <div class="status-item">
-                    <span class="status-label">Data source</span>
-                    <strong>Static JSON files</strong>
+                    <span class="status-label">Fuente de datos</span>
+                    <strong>API REST Simulada</strong>
                 </div>
                 <div class="status-item">
-                    <span class="status-label">Active sensors</span>
+                    <span class="status-label">Sensores activos</span>
                     <strong id="active-count">0 / 4</strong>
                 </div>
                 <div class="status-item">
-                    <span class="status-label">Offline sensors</span>
+                    <span class="status-label">Sensores desconectados</span>
                     <strong id="offline-count">0</strong>
                 </div>
             </div>
@@ -99,100 +99,177 @@
             <ul class="sensor-health" id="sensor-health" aria-live="polite"></ul>
         </section>
 
-        <section class="alarm-panel" aria-label="Alarm summary">
+        <section class="alarm-panel" aria-label="Resumen de alarmas">
             <div class="panel-heading">
-                <h2>Alarm Summary</h2>
-                <p>Thresholds: <span id="alarm-config-status">loading</span></p>
+                <h2>Resumen de Alarmas</h2>
+                <p>Límites: <span id="alarm-config-status">cargando</span></p>
             </div>
 
             <div class="status-grid alarm-grid">
                 <div class="status-item">
-                    <span class="status-label">Active Critical Alarms</span>
+                    <span class="status-label">Alarmas Críticas Activas</span>
                     <strong id="critical-count">0</strong>
                 </div>
                 <div class="status-item">
-                    <span class="status-label">Active Warnings</span>
+                    <span class="status-label">Advertencias Activas</span>
                     <strong id="warning-count">0</strong>
                 </div>
                 <div class="status-item">
-                    <span class="status-label">Offline Sensors</span>
+                    <span class="status-label">Sensores Desconectados</span>
                     <strong id="alarm-offline-count">0</strong>
                 </div>
                 <div class="status-item">
-                    <span class="status-label">Overall Risk Level</span>
+                    <span class="status-label">Nivel de Riesgo Global</span>
                     <strong id="overall-risk">NORMAL</strong>
                 </div>
             </div>
 
             <ul class="alarm-list" id="alarm-list" aria-live="polite">
-                <li class="alarm-empty">No active alarms</li>
+                <li class="alarm-empty">Sin alarmas activas</li>
             </ul>
         </section>
 
-        <section class="trends-panel" aria-label="Historical trends">
+        <section class="trends-panel" aria-label="Tendencias históricas">
             <div class="panel-heading">
-                <h2>Historical Trends</h2>
-                <p>Charts update every <span id="history-interval">10 seconds</span></p>
+                <h2>Tendencias Históricas</h2>
+                <p>Las gráficas se actualizan cada <span id="history-interval">10 segundos</span></p>
             </div>
 
-            <div class="export-toolbar">
-                <button id="export-temperature">Export Temperature CSV</button>
-                <button id="export-ph">Export pH CSV</button>
-                <button id="export-do">Export DO CSV</button>
-                <button id="export-ec">Export EC CSV</button>
-                <button id="export-all">Export All CSV</button>
+            <div class="card export-card">
+                <h3>Exportar Historial (CSV / Excel)</h3>
+                <div class="button-group">
+                    <button class="btn-export excel-btn" onclick="handleExportExcel()"
+                        style="background-color: #1D6F42; color: white;">
+                        Exportar Reporte Completo (Excel)
+                    </button>
+                    <button class="btn-export" onclick="handleExport('rtd')">Temperatura (RTD)</button>
+                    <button class="btn-export" onclick="handleExport('ph')">pH</button>
+                    <button class="btn-export" onclick="handleExport('do')">Oxígeno (DO)</button>
+                    <button class="btn-export" onclick="handleExport('ec')">Conductividad (EC)</button>
+                    <button class="btn-export" onclick="handleExport('all')">Todos los Sensores</button>
+                </div>
             </div>
 
             <div class="charts-grid">
                 <article class="chart-card">
                     <div class="chart-heading">
-                        <h3>Temperature vs Time</h3>
-                        <span>logs/temperature.csv</span>
+                        <h3>Temperatura vs Tiempo</h3>
+                        <span>API/Historial</span>
                     </div>
                     <div class="chart-frame">
                         <canvas id="temperature-chart"></canvas>
-                        <p class="chart-empty" id="temperature-chart-empty">No historical data available</p>
+                        <p class="chart-empty" id="temperature-chart-empty">No hay datos históricos disponibles</p>
                     </div>
                 </article>
 
                 <article class="chart-card">
                     <div class="chart-heading">
-                        <h3>pH vs Time</h3>
-                        <span>logs/ph.csv</span>
+                        <h3>pH vs Tiempo</h3>
+                        <span>API/Historial</span>
                     </div>
                     <div class="chart-frame">
                         <canvas id="ph-chart"></canvas>
-                        <p class="chart-empty" id="ph-chart-empty">No historical data available</p>
+                        <p class="chart-empty" id="ph-chart-empty">No hay datos históricos disponibles</p>
                     </div>
                 </article>
 
                 <article class="chart-card">
                     <div class="chart-heading">
-                        <h3>Dissolved Oxygen vs Time</h3>
-                        <span>logs/do.csv</span>
+                        <h3>Oxígeno Disuelto vs Tiempo</h3>
+                        <span>API/Historial</span>
                     </div>
                     <div class="chart-frame">
                         <canvas id="do-chart"></canvas>
-                        <p class="chart-empty" id="do-chart-empty">No historical data available</p>
+                        <p class="chart-empty" id="do-chart-empty">No hay datos históricos disponibles</p>
                     </div>
                 </article>
 
                 <article class="chart-card">
                     <div class="chart-heading">
-                        <h3>Conductivity vs Time</h3>
-                        <span>logs/ec.csv</span>
+                        <h3>Conductividad vs Tiempo</h3>
+                        <span>API/Historial</span>
                     </div>
                     <div class="chart-frame">
                         <canvas id="ec-chart"></canvas>
-                        <p class="chart-empty" id="ec-chart-empty">No historical data available</p>
+                        <p class="chart-empty" id="ec-chart-empty">No hay datos históricos disponibles</p>
                     </div>
                 </article>
             </div>
         </section>
+
+        <div class="card terminal-card" style="margin-top: 20px; padding: 20px; border-left: 4px solid #00ffcc;">
+            <div class="card terminal-card" style="margin-top: 20px; padding: 20px; border-left: 4px solid #00ffcc;">
+            <h3>Consola de Hardware (Atlas Scientific EZO)</h3>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;">
+                <select id="terminal-sensor-select" style="padding: 5px;">
+                    <option value="rtd">Temperatura (RTD)</option>
+                    <option value="ph">Sensor de pH</option>
+                    <option value="do">Oxígeno Disuelto (DO)</option>
+                    <option value="ec">Conductividad (EC)</option>
+                </select>
+
+                <button class="btn-command" onclick="sendCommand('i')"
+                    style="padding: 5px 15px; cursor: pointer;">Info (i)</button>
+                <button class="btn-command" onclick="sendCommand('status')"
+                    style="padding: 5px 15px; cursor: pointer;">Estado</button>
+                <button class="btn-command" onclick="sendCommand('r')"
+                    style="padding: 5px 15px; background-color: #4f46e5; color: white; border: none; border-radius: 4px; cursor: pointer;">Leer (r)</button>
+
+                <span style="color: #666; margin: 0 10px;">|</span>
+
+                <input type="text" id="custom-command" placeholder="Ej: factory, t,25.0, led,1"
+                    style="padding: 5px; width: 200px; background-color: #222; color: #00ffcc; border: 1px solid #444;">
+                <button class="btn-command" onclick="sendCustomCommand()"
+                    style="padding: 5px 15px; background-color: #00ffcc; color: black; font-weight: bold; border: none; border-radius: 4px; cursor: pointer;">Enviar ↵</button>
+            </div>
+
+            <div id="terminal-output"
+                style="background-color: #1e1e1e; color: #00ff00; padding: 15px; height: 150px; overflow-y: auto; font-family: 'Courier New', Courier, monospace; border-radius: 4px;">
+                <div style="color: #888;">[SISTEMA] Consola I2C iniciada. Esperando comandos...</div>
+            </div>
+        </div>
+
+        <div class="card calibration-card" style="margin-top: 20px; padding: 20px; border-left: 4px solid #ffcc00;">
+            <h3>Panel de Calibración</h3>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <label style="display: block; margin-bottom: 5px;">Seleccionar Sensor a Calibrar:</label>
+                    <select id="cal-sensor-select" style="padding: 8px; width: 100%; margin-bottom: 15px;">
+                        <option value="rtd">Temperatura (RTD)</option>
+                        <option value="ph">Sensor de pH</option>
+                        <option value="do">Oxígeno Disuelto (DO)</option>
+                        <option value="ec">Conductividad (EC)</option>
+                    </select>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px;">Comandos Globales de Calibración:</label>
+                        <button class="btn-command" onclick="sendCalibrationCmd('cal,?')" style="padding: 5px 10px; margin-right: 5px; cursor: pointer;">Verificar Estado (?)</button>
+                        <button class="btn-command" onclick="sendCalibrationCmd('cal,clear')" style="padding: 5px 10px; background-color: #ff4444; color: white; border: none; border-radius: 4px; cursor: pointer;">Borrar Memoria (Clear)</button>
+                    </div>
+                </div>
+
+                <div style="background-color: #f5f5f5; padding: 15px; border-radius: 4px;">
+                    <h4 style="margin-top: 0; color: #333;">Calibración Multipunto</h4>
+                    <p style="font-size: 0.9em; color: #666;">Ingresa el valor de referencia físico (ej. solución pH, o temperatura del agua).</p>
+                    
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="number" id="cal-value" placeholder="Ej: 7.00" step="0.01" style="padding: 8px; width: 100px; border: 1px solid #ccc; border-radius: 4px;">
+                        <button class="btn-command" onclick="calibratePoint()" style="padding: 8px 15px; background-color: #00ffcc; color: black; font-weight: bold; border: none; border-radius: 4px; cursor: pointer;">Calibrar Punto</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <script src="dashboard.js"></script>
+    <script src="mock-service.js"></script>
+    <script src="export-service.js"></script>
+    <script src="export-excel.js"></script>
 </body>
 
 </html>
