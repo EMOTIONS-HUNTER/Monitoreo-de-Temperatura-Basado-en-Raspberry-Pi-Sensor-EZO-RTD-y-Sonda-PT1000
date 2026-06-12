@@ -1,0 +1,25 @@
+{
+    "rtd":
+    {
+        "address":"0x66",
+        "enabled":true
+    },
+
+    "ph":
+    {
+        "address":"0x63",
+        "enabled":true
+    },
+
+    "do":
+    {
+        "address":"0x61",
+        "enabled":true
+    },
+
+    "ec":
+    {
+        "address":"0x64",
+        "enabled":true
+    }
+}

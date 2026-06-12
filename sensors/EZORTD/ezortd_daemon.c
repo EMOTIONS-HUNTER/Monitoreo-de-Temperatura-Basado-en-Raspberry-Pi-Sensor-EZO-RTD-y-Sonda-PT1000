@@ -35,22 +35,29 @@ int main()
 
                 fclose(f);
             }
-        }
 
-        FILE *log = fopen(
-            "/home/cristian/airquality/basic-ui-dashboard/logs/temp.csv",
-            "a");
+            FILE *log = fopen(
+                "/home/cristian/airquality/basic-ui-dashboard/logs/temperature.csv",
+                "a+");
 
-        if (log)
-        {
-            time_t now = time(NULL);
+            if (log)
+            {
+                time_t now = time(NULL);
 
-            fprintf(log,
-                    "%ld,%.3f\n",
-                    now,
-                    temperature);
+                fseek(log, 0, SEEK_END);
 
-            fclose(log);
+                if (ftell(log) == 0)
+                {
+                    fprintf(log, "timestamp,value\n");
+                }
+
+                fprintf(log,
+                        "%ld,%.3f\n",
+                        now,
+                        temperature);
+
+                fclose(log);
+            }
         }
 
         sleep(1);

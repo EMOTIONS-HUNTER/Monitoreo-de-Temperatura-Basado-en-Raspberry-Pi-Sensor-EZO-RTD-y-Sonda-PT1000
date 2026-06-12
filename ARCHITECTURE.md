@@ -129,7 +129,7 @@ Compiled from `ezortd_daemon.c + ezortd.c`. Runs an infinite loop with 1-second 
 
 1. Reads temperature via `getTemperature()`
 2. Overwrites `data/EZORTD.json` with current value
-3. Appends a Unix-timestamp + temperature row to `logs/temp.csv`
+3. Appends a Unix-timestamp + temperature row to `logs/temperature.csv`
 
 **Output paths** (hardcoded in source — update before compiling):
 
@@ -137,7 +137,7 @@ Compiled from `ezortd_daemon.c + ezortd.c`. Runs an infinite loop with 1-second 
 // JSON
 "/home/cristian/airquality/basic-ui-dashboard/data/EZORTD.json"
 // CSV log
-"/home/cristian/airquality/basic-ui-dashboard/logs/temp.csv"
+"/home/cristian/airquality/basic-ui-dashboard/logs/temperature.csv"
 ```
 
 **JSON output format:**
@@ -167,7 +167,7 @@ timestamp,temperature        ← header row (from EZORTD.csv template)
        ├──► data/EZORTD.json    (overwrite, every 1 s)
        │        { "temperature": 24.414 }
        │
-       └──► logs/temp.csv       (append, every 1 s)
+       └──► logs/temperature.csv (append, every 1 s)
                 1717027200,24.414
                        │
                        ▼
@@ -257,7 +257,7 @@ const res = await Promise.all([
 | Sensor read delay | 1,000,000 µs (1 s) | `sensors/EZORTD/ezortd.c` |
 | Daemon loop interval | `sleep(1)` — 1 s | `sensors/EZORTD/ezortd_daemon.c` |
 | JSON output path | `/home/cristian/…/data/EZORTD.json` | `ezortd_daemon.c` (**update per deployment**) |
-| CSV log path | `/home/cristian/…/logs/temp.csv` | `ezortd_daemon.c` (**update per deployment**) |
+| CSV log path | `/home/cristian/…/logs/temperature.csv` | `ezortd_daemon.c` (**update per deployment**) |
 | Frontend poll interval (primary) | 1000 ms | `index.html` |
 | Frontend poll interval (extended) | 6000 ms | `index-css.html` |
 | Nginx document root | `/home/pi/<repo-path>` | `/etc/nginx/sites-available/default` |
@@ -322,7 +322,7 @@ Retained in `sensors/HTU21D/` for reference and backward compatibility with `ind
 | File | Writer | Reader | Format | Update Rate |
 |---|---|---|---|---|
 | `data/EZORTD.json` | `ezortd_daemon` | Nginx → browser | JSON object | 1 s |
-| `logs/temp.csv` | `ezortd_daemon` | (manual / future viz) | CSV (epoch, float) | 1 s (append) |
+| `logs/temperature.csv` | `ezortd_daemon` | Browser historical chart | CSV (`timestamp,value`) | 1 s (append) |
 | `data/HTU21D.json` | `HTU21D` binary (manual / cron) | Nginx → browser | JSON object | On demand |
 | `data/EZORTD.csv` | (template only — unused) | — | CSV | — |
 
