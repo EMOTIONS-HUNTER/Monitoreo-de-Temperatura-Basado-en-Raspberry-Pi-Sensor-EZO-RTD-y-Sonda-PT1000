@@ -1,62 +1,219 @@
 # Sistema de Monitoreo de Parámetros Fisicoquímicos para Fotobiorreactor
 
-**Estado del Proyecto:** Desarrollo Activo (Fase de Pruebas de Integración y Simulación I2C)
-**Plataforma de Hardware:** Raspberry Pi 4 Model B
-**Pila Tecnológica:** Node.js, Express, Vanilla JavaScript, Nginx, C/C++
+**Plataforma de hardware:** Raspberry Pi 4 Model B  
+**Estado del proyecto:** Desarrollo activo — Integración de hardware en curso (Fase 9)  
+**Pila tecnológica:** C, Node.js, Express, Vanilla JavaScript, Nginx  
+**Protocolo de comunicación físico:** I²C (Inter-Integrated Circuit), 100 kHz — 400 kHz  
 
-## 1. Resumen del Proyecto
+---
 
-Este repositorio documenta la arquitectura de software y los lineamientos de diseño de hardware para un sistema de adquisición de datos en tiempo real orientado a fotobiorreactores. Aunque el repositorio fue inicializado bajo el título de un proyecto para la sonda de temperatura PT1000, el sistema actual constituye una plataforma integral para el monitoreo simultáneo de cuatro parámetros críticos utilizando módulos OEM de la serie EZO de Atlas Scientific:
+## 1. Resumen Ejecutivo
 
-* **Temperatura** (Sonda RTD PT1000)
-* **Potencial de Hidrógeno** (Sonda de pH)
-* **Oxígeno Disuelto** (Sonda DO galvánica/óptica)
-* **Conductividad Eléctrica** (Sonda EC)
+Este repositorio documenta la arquitectura de software y las especificaciones de diseño de hardware de un sistema de adquisición de datos (DAQ) en tiempo real orientado a fotobiorreactores de escala de laboratorio. El proyecto se inició como un sistema de medición de temperatura de precisión basado en el módulo **EZO-RTD™** de Atlas Scientific y una sonda de platino PT1000; sin embargo, ha evolucionado en una plataforma integral de monitoreo que gestiona de forma simultánea cuatro parámetros fisicoquímicos críticos para el control de cultivos fotosintéticos.
 
-## 2. Arquitectura del Sistema
+Los cuatro parámetros monitoreados y los módulos OEM asociados son los siguientes:
 
-La solución implementa una topología de red distribuida localmente, utilizando un modelo Cliente-Servidor optimizado por un proxy inverso para la gestión del tráfico y la mitigación de restricciones de intercambio de recursos de origen cruzado (CORS).
+| Parámetro | Módulo EZO | Dirección I²C | Unidad de medida |
+|---|---|---|---|
+| Temperatura | EZO-RTD™ (ISCCB-2) | `0x66` | °C |
+| Potencial de Hidrógeno | EZO-pH™ | `0x63` | pH |
+| Oxígeno Disuelto | EZO-DO™ | `0x61` | mg/L |
+| Conductividad Eléctrica | EZO-EC™ | `0x64` | µS/cm |
+
+La arquitectura del sistema implementa una topología de red distribuida localmente, separando de forma explícita las responsabilidades en cuatro capas: presentación (frontend), enrutamiento (Nginx), lógica de negocio y API (Node.js/Express) y adquisición de datos en hardware (demonios en C). Este diseño por capas garantiza la extensibilidad del sistema y permite la sustitución o incorporación de nuevos módulos sensores sin alterar la lógica de presentación.
+
+---
+
+## 2. Pila Tecnológica
 
 ### 2.1. Capa de Presentación (Frontend)
-Interfaz gráfica de usuario (GUI) asíncrona desarrollada en HTML5, CSS3 y JavaScript puro (ES6+). Implementa rutinas de *polling* de alta frecuencia (1000 ms) para la actualización de métricas en tiempo real y renderizado de series temporales mediante la biblioteca `Chart.js`.
 
-### 2.2. Capa de Enrutamiento y Proxy (Nginx)
-Servidor web Nginx configurado en el puerto `8888`. Actúa como servidor de archivos estáticos para la capa de presentación y opera como proxy inverso, redirigiendo todas las solicitudes HTTP bajo el prefijo `/api/` hacia el proceso de Node.js en el puerto `3000`.
+- **Lenguaje:** Vanilla JavaScript ES6+, HTML5, CSS3 puro
+- **Biblioteca de visualización:** Chart.js (entregada vía CDN)
+- **Biblioteca de exportación tabular:** SheetJS (`xlsx.full.min.js`, vía CDN)
+- **Ciclo de actualización de lecturas en vivo:** 1000 ms (intervalo de *polling*)
+- **Ciclo de actualización de tendencias históricas:** 10 000 ms
+- **Idioma de la interfaz:** Español neutro
 
-### 2.3. Capa de Lógica de Negocio y API (Backend)
-Servidor HTTP desarrollado en entorno Node.js utilizando el framework Express. Sus responsabilidades principales incluyen:
-* Exposición de endpoints RESTful para la transmisión de telemetría.
-* Simulación de retardos y latencias físicas inherentes al protocolo I2C (300 ms - 900 ms).
-* Implementación de un analizador léxico (*Lexical Parser*) capaz de procesar el conjunto de instrucciones oficial de Atlas Scientific (calibración, compensación ambiental y diagnóstico).
+### 2.2. Capa de Enrutamiento y Proxy
 
-### 2.4. Capa Física (Adquisición de Datos)
-Demonios ejecutables compilados en C/C++ responsables de la interrogación directa de los registros de hardware en el bus I2C de la Raspberry Pi a través de los pines GPIO (SDA/SCL).
+- **Servidor:** Nginx
+- **Puerto de entrada:** `8888`
+- **Función:** Entrega de archivos estáticos del frontend y proxy inverso transparente hacia el puerto `3000` para el prefijo `/api/`
 
-## 3. Características Técnicas Implementadas
+### 2.3. Capa de Lógica de Negocio y API
 
-* **Motor de Evaluación de Alarmas:** Subsistema lógico que compara la telemetría en tiempo real contra umbrales de operación críticos y de advertencia definidos paramétricamente en el archivo `config/alarms.json`.
-* **Consola de Hardware Virtual:** Emulador integrado en la interfaz de usuario que permite la inyección de cadenas de comandos estandarizadas hacia los módulos EZO, facilitando rutinas de calibración multipunto y configuración de registros de compensación.
-* **Módulo de Exportación de Datos:** Procesamiento de arreglos de datos históricos en el cliente y serialización a formato `.xlsx` utilizando la biblioteca `SheetJS`, permitiendo la extracción de registros tabulares para análisis posterior.
+- **Entorno de ejecución:** Node.js (≥ v18)
+- **Framework HTTP:** Express v5
+- **Puerto de escucha:** `3000`
+- **Dependencias de producción:** `express ^5.2.1`, `cors ^2.8.6`
 
-## 4. Estructura del Directorio Fuente
+### 2.4. Capa de Adquisición de Datos (Hardware)
+
+- **Lenguaje:** C (estándar C99)
+- **Interfaz de hardware:** Bus I²C del sistema operativo Linux mediante `/dev/i2c-1`
+- **Encabezados del sistema utilizados:** `<linux/i2c-dev.h>`, `<sys/ioctl.h>`
+- **Sistema de construcción:** GNU Make
+
+---
+
+## 3. Estructura del Directorio Fuente
 
 ```text
 /
-├── api/                   
-│   └── server.js           # Lógica de enrutamiento Express y simulador de protocolo EZO
-├── config/                
-│   ├── alarms.json         # Definición de límites operativos de seguridad
-│   └── sensors.json        # Metadatos y resolución de los instrumentos
-├── data/                  
-│   └── *.json              # Vectores de estado transitorios poblados por procesos C++
-├── frontend/              
-│   ├── index.html          # Interfaz principal de control
-│   ├── dashboard.js        # Rutinas de renderizado y evaluación de estado
-│   ├── mock-service.js     # Interfaz de comunicación asíncrona con el backend
-│   ├── export-service.js   # Lógica de construcción de conjuntos de datos para gráficos
-│   └── export-excel.js     # Formateo y serialización de archivos de hoja de cálculo
-├── logs/                  
-│   └── *.csv               # Registros históricos persistentes para series temporales
-├── sensors/               
-│   └── */*.c               # Código fuente de los controladores de hardware (I2C)
-└── README.md
+├── api/
+│   └── server.js               # Servidor Express: endpoints REST y parser léxico EZO
+│
+├── config/
+│   ├── alarms.json             # Umbrales operativos configurables por variable
+│   └── sensors.json            # Metadatos declarativos de los módulos EZO (dirección I²C, habilitación)
+│
+├── data/
+│   ├── EZORTD.json             # Vector de estado actual: temperatura (escrito por el demonio C)
+│   ├── EZOPH.json              # Vector de estado actual: pH
+│   ├── EZODO.json              # Vector de estado actual: oxígeno disuelto
+│   └── EZOEC.json              # Vector de estado actual: conductividad eléctrica
+│
+├── frontend/
+│   ├── index.html              # Punto de entrada del dashboard de monitoreo
+│   ├── dashboard.css           # Hoja de estilos responsiva del sistema
+│   ├── dashboard.js            # Lógica principal: polling, evaluación de alarmas, gráficas
+│   ├── mock-service.js         # Capa de comunicación asíncrona con el backend (fetch/POST)
+│   ├── export-service.js       # Serialización de datos históricos a formato CSV
+│   └── export-excel.js         # Generación de reportes multipagina en formato XLSX
+│
+├── logs/
+│   ├── temperature.csv         # Historial persistente de temperatura (escrito por el demonio)
+│   ├── ph.csv                  # Historial persistente de pH
+│   ├── do.csv                  # Historial persistente de oxígeno disuelto
+│   └── ec.csv                  # Historial persistente de conductividad eléctrica
+│
+├── sensors/
+│   ├── EZORTD/
+│   │   ├── ezortd.h            # API pública: constante de dirección I²C y firma de getTemperature()
+│   │   ├── ezortd.c            # Implementación del protocolo I²C para el EZO-RTD
+│   │   ├── main.c              # Ejecutable de lectura única (one-shot), salida JSON a stdout
+│   │   ├── ezortd_daemon.c     # Demonio de lectura continua: escribe JSON y appends CSV
+│   │   └── Makefile            # Sistema de construcción del módulo RTD
+│   │
+│   ├── EZOPH/
+│   │   ├── ezoph.h             # API pública del módulo pH
+│   │   ├── ezoph.c             # Implementación del protocolo I²C para el EZO-pH
+│   │   ├── main.c              # Ejecutable de lectura única
+│   │   └── Makefile
+│   │
+│   ├── EZODO/
+│   │   ├── ezodo.h             # API pública del módulo DO
+│   │   ├── ezodo.c             # Implementación del protocolo I²C para el EZO-DO
+│   │   ├── main.c              # Ejecutable de lectura única
+│   │   └── Makefile
+│   │
+│   └── EZOEC/
+│       ├── ezoec.h             # API pública del módulo EC
+│       ├── ezoec.c             # Implementación del protocolo I²C para el EZO-EC
+│       ├── main.c              # Ejecutable de lectura única
+│       └── Makefile
+│
+├── package.json                # Manifiesto de dependencias Node.js
+├── package-lock.json           # Árbol de dependencias resuelto y bloqueado
+├── README.md                   # Este documento
+├── ARCHITECTURE.md             # Especificación técnica de la arquitectura del sistema
+└── PROJECT_STATUS.md           # Estado de hitos, riesgos y fases pendientes
+```
+
+---
+
+## 4. Instrucciones de Despliegue
+
+### 4.1. Requisitos Previos
+
+- Node.js v18 o superior instalado en el sistema anfitrión
+- Nginx instalado (`sudo apt install nginx` en sistemas Debian/Ubuntu)
+- Acceso al directorio raíz del repositorio
+
+### 4.2. Inicialización del Servidor de Backend (Node.js)
+
+Desde el directorio raíz del repositorio, instalar las dependencias de producción y levantar el servidor:
+
+```bash
+npm install
+node api/server.js
+```
+
+El servidor quedará escuchando en `http://localhost:3000`. Verificar el inicio exitoso con el mensaje:
+
+```
+[MOCK SERVER] Backend Node.js corriendo en http://localhost:3000
+```
+
+Para ejecución persistente en segundo plano se recomienda el gestor de procesos `pm2`:
+
+```bash
+npm install -g pm2
+pm2 start api/server.js --name fotobiorreactor-api
+pm2 save
+```
+
+### 4.3. Configuración del Proxy Inverso Nginx
+
+Crear o editar el bloque de servidor activo de Nginx. En sistemas Debian-based, el archivo de configuración canónico es `/etc/nginx/sites-available/fotobiorreactor`:
+
+```nginx
+server {
+    listen 8888;
+    server_name localhost;
+
+    # Raíz del contenido estático: directorio raíz del repositorio
+    root /ruta/absoluta/al/repositorio;
+    index frontend/index.html;
+
+    # Entrega de archivos estáticos del frontend
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    # Proxy inverso transparente hacia el backend Node.js
+    location /api/ {
+        proxy_pass         http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+    }
+}
+```
+
+Habilitar el sitio y recargar el servicio:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/fotobiorreactor /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+### 4.4. Acceso al Cliente
+
+Abrir un navegador web y dirigirse a:
+
+```
+http://localhost:8888/frontend/index.html
+```
+
+El dashboard iniciará automáticamente el ciclo de polling hacia la API y las lecturas en vivo comenzarán a actualizarse con los datos simulados del backend.
+
+### 4.5. Construcción de los Demonios en C (Hardware Real)
+
+Para compilar los controladores de hardware en la Raspberry Pi, ejecutar el siguiente procedimiento por módulo sensor (se ilustra con el módulo RTD):
+
+```bash
+cd sensors/EZORTD
+make
+```
+
+Esto generará el ejecutable `EZORTD`. Antes de compilar el demonio continuo (`ezortd_daemon.c`), actualizar las rutas absolutas codificadas en el código fuente para que correspondan al directorio de despliegue real en la Raspberry Pi.
+
+**Nota:** El bus I²C debe estar habilitado en la Raspberry Pi mediante `sudo raspi-config` → *Interface Options* → *I2C* → *Enable*. Se recomienda agregar el usuario de ejecución al grupo `i2c` para evitar la ejecución con privilegios de superusuario:
+
+```bash
+sudo usermod -aG i2c $USER
+```
