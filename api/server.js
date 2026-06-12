@@ -184,6 +184,23 @@ app.post('/api/sensors/:type/command', async (req, res) => {
     });
 });
 
+// --- RUTAS DE GESTIÓN DE ALMACENAMIENTO ---
+
+// Variable global para simular la configuración de escritura del demonio C++
+let loggingRateSeconds = 1;
+
+app.post('/api/config/logging', (req, res) => {
+    loggingRateSeconds = req.body.rate || 1;
+    console.log(`[SISTEMA] Demonio de escritura configurado a: 1 registro cada ${loggingRateSeconds}s`);
+    res.json({ success: true, rate: loggingRateSeconds });
+});
+
+app.post('/api/history/clear', (req, res) => {
+    console.log(`[SISTEMA] Purgado de base de datos histórico solicitado por el usuario.`);
+    // En el hardware real, aquí se ejecutaría 'fs.unlink()' o se truncarían los archivos CSV en /logs/
+    res.json({ success: true, message: "Archivos de registro truncados correctamente." });
+});
+
 app.listen(PORT, () => {
     console.log(`[MOCK SERVER] Backend Node.js corriendo en http://localhost:${PORT}`);
 });

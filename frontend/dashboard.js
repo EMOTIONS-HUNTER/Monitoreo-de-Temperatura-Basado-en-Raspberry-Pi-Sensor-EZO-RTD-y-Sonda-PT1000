@@ -1,7 +1,10 @@
 const POLLING_INTERVAL_MS = 1000;
-const HISTORY_POLLING_INTERVAL_MS = 10000;
 const ALARM_CONFIG_FILE = "../config/alarms.json";
 const WARNING_MARGIN_RATIO = 0.1;
+
+// Variables dinámicas para el control de históricos
+let currentHistoryInterval = 10000;
+let historyIntervalId = null;
 
 // Diccionario para traducir estados en la UI sin romper las clases CSS
 const stateTranslations = {
@@ -144,7 +147,7 @@ function setSensorState(result) {
     valueElement.textContent = result.value;
     // Traducir el estado para mostrar en pantalla, manteniendo la clase en inglés
     stateElement.textContent = stateTranslations[state] || state;
-    
+
     ["online", "normal", "warning", "critical", "offline"].forEach((className) => {
         stateElement.classList.toggle(className, className === stateClass);
         cardElement.classList.toggle(className, className === stateClass);
@@ -586,11 +589,75 @@ async function updateHistoricalTrends() {
     });
 }
 
-updateDashboard();
-setInterval(updateDashboard, POLLING_INTERVAL_MS);
+// --- MOTOR DE INTERVALOS DINÁMICOS ---
 
+function startHistoryPolling() {
+    if (historyIntervalId) {
+        clearInterval(historyIntervalId);
+    }
+    historyIntervalId = setInterval(updateHistoricalTrends, currentHistoryInterval);
+}
+
+// Inicialización de renderizado
 updateHistoricalTrends();
-setInterval(updateHistoricalTrends, HISTORY_POLLING_INTERVAL_MS);
+startHistoryPolling();
+
+// --- FUNCIONES DE CONTROL DE ALMACENAMIENTO ---
+
+window.updateChartRefreshRate = function () {
+    const select = document.getElementById("chart-refresh-rate");
+    currentHistoryInterval = parseInt(select.value, 10);
+
+    const intervalText = select.options[select.selectedIndex].text.replace("Cada ", "").toLowerCase();
+    document.getElementById("history-interval").textContent = intervalText;
+
+    startHistoryPolling();
+};
+
+window.updateLoggingRate = async function () {
+    const select = document.getElementById("data-logging-rate");
+    const rate = parseInt(select.value, 10);
+
+    try {
+        const response = await fetch('/api/config/logging', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rate })
+        });
+
+        if (!response.ok) throw new Error("Fallo en la sincronización con el servidor");
+        alert(`Configuración de hardware actualizada:\nLos demonios C++ guardarán 1 registro cada ${rate} segundos.`);
+    } catch (error) {
+        console.error("Error configurando la tasa de registro:", error);
+    }
+};
+
+window.clearHistoricalData = async function () {
+    const confirmacion = confirm("ADVERTENCIA CRÍTICA:\n\n¿Confirma el purgado total de los archivos históricos CSV? Esta acción no se puede deshacer y los datos de tendencias se perderán de forma permanente.");
+
+    if (!confirmacion) return;
+
+    try {
+        const response = await fetch('/api/history/clear', { method: 'POST' });
+        if (!response.ok) throw new Error("Fallo en el purgado de archivos");
+
+        // Simulación visual de purgado en la interfaz (Destrucción de datos del Canvas)
+        historicalCharts.forEach(config => {
+            const existingChart = chartInstances.get(config.id);
+            if (existingChart) {
+                existingChart.data.labels = [];
+                existingChart.data.datasets.forEach(dataset => dataset.data = []);
+                existingChart.update("none");
+            }
+            setChartAvailability(config, false);
+        });
+
+        alert("Purgado de memoria completado exitosamente.");
+    } catch (error) {
+        console.error("Error ejecutando el borrado:", error);
+        alert("Error de sistema al intentar purgar los archivos.");
+    }
+};
 
 const chartCards = {
     temperature: document.getElementById("chart-card-temperature"),
@@ -611,13 +678,13 @@ document.querySelectorAll(".chart-filter").forEach((button) => {
 
         if (selected === "all") {
             Object.values(chartCards).forEach((card) => {
-                if(card) card.style.display = "";
+                if (card) card.style.display = "";
             });
             return;
         }
 
         Object.entries(chartCards).forEach(([key, card]) => {
-            if(card) card.style.display = key === selected ? "" : "none";
+            if (card) card.style.display = key === selected ? "" : "none";
         });
     });
 });
